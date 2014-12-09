@@ -1,0 +1,11 @@
+﻿已經開始建置於 2014/12/9 下午 03:32:55。
+     1>節點 2 (Build 目標) 上的專案 "E:\GitHub\makeShading\MakeShading\MakeShading\MakeShading.vcxproj"。
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /IE:\GitHub\makeShading\MakeShading\ /Zi /nologo /W3 /WX- /sdl /Od /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Debug\\" /Fd"x64\Debug\vc110.pdb" /Gd /TP /errorReport:prompt Source.cpp
+         Source.cpp
+     1>Source.cpp(2): fatal error C1083: 無法開啟包含檔案: 'Eigen/Dense': No such file or directory
+     1>專案 "E:\GitHub\makeShading\MakeShading\MakeShading\MakeShading.vcxproj" (Build 目標) 建置完成 -- 失敗。
+
+建置失敗。
+
+經過時間 00:00:00.34
