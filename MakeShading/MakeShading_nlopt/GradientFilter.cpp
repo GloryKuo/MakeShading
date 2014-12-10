@@ -5,6 +5,9 @@ GradientFilter::GradientFilter()
 {
 	lambda = 0.1;
 	tao = 0.5;
+	stopItrCost = 2.0;
+	stopMaxItrCount = 10000;
+	stopPixelVal = 1.0;
 }
 GradientFilter::~GradientFilter()
 {
@@ -18,19 +21,20 @@ bool GradientFilter::init(cv::Mat img)
 	if(img.channels() != 1){
 		cvtColor(img, img, CV_RGB2GRAY);
 	}
-
+	imgSize = Size(img.cols, img.rows);
+	resize(img, img, Size(38,26));
 	img.convertTo(m_inputImg, CV_64FC1, 1/255.0);	  // uint8 to double
 	m_pixelWeights = getPixelWeight(m_inputImg);
 
-	data.inputImg = m_inputImg;
-	data.pixelWeight = m_pixelWeights;
 	data.lambda = 0.1;
-	data.count = 0;
+	data.itrCount = 0;
+	m_clipped_grad = gradClipping(getGradient(m_inputImg), tao);   //get gradient 
 		
-	opt = new nlopt::opt(nlopt::LN_COBYLA, m_inputImg.rows*m_inputImg.cols);    /* algorithm and dimensionality */
+	//opt = new nlopt::opt(nlopt::LN_COBYLA, m_inputImg.rows*m_inputImg.cols);    /* algorithm and dimensionality */
+	opt = new nlopt::opt(nlopt::LN_COBYLA, 1);    /* algorithm and dimensionality */
 
 	opt->set_min_objective(objFunc, &data);
-	opt->set_stopval(1.0);
+	opt->set_stopval(stopPixelVal);
 	//opt->set_maxtime(120);       /* set stopping criteria*/
 	//std::vector<double> lb(m_inputImg.rows*m_inputImg.cols, 1e-8);
 	//opt->set_lower_bounds(lb);
@@ -41,52 +45,14 @@ bool GradientFilter::init(cv::Mat img)
 double GradientFilter::objFunc(const std::vector<double> &x, std::vector<double> &grad, void* objFunc_data)
 {
 	ObjFunc_data *data =  reinterpret_cast<ObjFunc_data*>(objFunc_data);
-	
-	Mat inputImg = data->inputImg;
-	Mat currentImg_1D(x);
-	Mat currentImg = currentImg_1D.reshape(1, inputImg.rows);
+	data->patch.at<double>(1,1) = x[0];
+	Mat grad_x = getGradient(data->patch);
+	double a = grad_x.at<double>(1,1)-(data->clipped_grad_x);
+	a = pow(a, 2);
+	double b = x[0] - data->inputImg_x;
+	b = (data->lambda)*(data->pixelWeight_x)*pow((x[0] - (data->inputImg_x)), 2);
 
-	Mat grad_currImg = getGradient(currentImg);
-	/* check iteration */
-	/*Mat grad_currImg_8U;
-	grad_currImg.convertTo(grad_currImg_8U, CV_8UC1, 255);
-	char *s = new char[30];
-	sprintf(s, "Debug/current/%d.jpg", data->count);
-	imwrite(s, grad_currImg_8U);
-	delete [] s;*/
-	////////////////////////
-
-	static Mat grad_inputImg, clipped_inputImg;
-	if(!grad_inputImg.data){          // 只做第一次
-		grad_inputImg = getGradient(inputImg);
-		clipped_inputImg = gradClipping(grad_inputImg);
-		//imshow("clipped image", clipped_inputImg);
-	}
-
-	if(!grad.empty()){
-		Mat secondOrder_grad = getGradient(grad_currImg);
-		Mat grad_forFunc, grad_forFunc1D, a, b, b2;
-		a = 2*secondOrder_grad.mul(grad_currImg - clipped_inputImg);
-		b2 = (data->lambda)*((data->pixelWeight).mul(currentImg - inputImg));
-		b = 2*grad_currImg.mul(b2);
-		grad_forFunc =  a + b; 
-		grad_forFunc1D = grad_forFunc.reshape(1, inputImg.rows*inputImg.cols);
-		grad_forFunc1D.copyTo(grad);
-	}
-
-
-	/* 計算cost */
-	Mat a = grad_currImg - clipped_inputImg;
-	pow(a, 2, a);
-	Mat b = currentImg - inputImg;
-	pow(b, 2, b);
-	b = b.mul(data->pixelWeight);
-	
-	Mat result = a + (data->lambda)*b;
-	double cost = cv::sum(result)[0];
-	/////////////////////
-	std::cout<<"iteration "<<++(data->count)<<": cost = "<<cost<<std::endl;
-	return cost;
+	return a+b;
 }
 
 double GradientFilter::constraint(const std::vector<double> &x, std::vector<double> &grad, void* cons_data)
@@ -95,25 +61,36 @@ double GradientFilter::constraint(const std::vector<double> &x, std::vector<doub
 }
 
 Mat GradientFilter::optimize()
-{
-	double minCost;    /* the minimum objective value, upon return */
-	std::vector<double> img_v;
-	//Mat img1D = Mat::zeros(Size(1, m_inputImg.rows*m_inputImg.cols), CV_64FC1);
-	Mat img1D = m_inputImg.reshape(1, m_inputImg.rows*m_inputImg.cols);
-	img_v.reserve(m_inputImg.rows*m_inputImg.cols);
-	img1D.copyTo(img_v);          //2D Mat covert to 1D vector	
-	
-	nlopt::result result = opt->optimize(img_v, minCost);
-	std::cout<<"result = "<<result<<std::endl;
-	
-	Mat img_opt1D(img_v);
-	Mat img_opt = img_opt1D.reshape(1, m_inputImg.rows);
-	std::cout<<"Count = "<< data.count <<std::endl;
-	std::cout<<"Cost  = "<< minCost <<std::endl;
-	
-	Mat residual = abs(m_inputImg - img_opt);
+{  
+	double sumCost = 0.0;
+	Mat currentImg = m_inputImg.clone();
+	do{
+		sumCost = 0.0;  
+		for(int i=1;i<m_inputImg.rows-1;i++)
+			for(int j=1;j<m_inputImg.cols-1;j++){
+				std::vector<double> x;
+				x.push_back(currentImg.at<double>(i,j));
+				data.inputImg_x = m_inputImg.at<double>(i,j);
+				data.clipped_grad_x = m_clipped_grad.at<double>(i,j);
+				data.pixelWeight_x = m_pixelWeights.at<double>(i,j);
+				data.patch = currentImg(Range(i-1, i+1), Range(j-1, j+1));
+
+				double cost = 0.0;
+				nlopt::result result = opt->optimize(x, cost);
+				currentImg.at<double>(i,j) = x[0];
+				sumCost += cost;
+			}
+			Mat show;
+			resize(currentImg, show, imgSize);
+			imshow("Current Image", show);
+			std::cout<<"iteration "<<++(data.itrCount)<<": cost = "<<sumCost<<std::endl;
+			waitKey(10);
+	}while (sumCost>=stopItrCost || data.itrCount >= stopMaxItrCount);
+
+	Mat residual = abs(m_inputImg - currentImg);
+	resize(residual, residual, imgSize);
 	imshow("residual", residual);
-	return img_opt.clone();
+	return currentImg.clone();
 }
 
 Mat GradientFilter::getGradient(Mat src )
@@ -149,18 +126,22 @@ Mat GradientFilter::getGradient(Mat src )
 	return grad;
 }
 
-Mat GradientFilter::gradClipping( Mat gradient )
+Mat GradientFilter::gradClipping( Mat gradient, double tao )
 {
 	Mat grad_Clipped, grad_f, clipped_d;
 
-	/* 取平均值作為threshold */
-	Mat m1, m2;
-	reduce(gradient, m1, 0, CV_REDUCE_AVG);
-	reduce(m1, m2, 1, CV_REDUCE_AVG);
-	double mean = m2.at<double>(0);
-	std::cout<<"The mean of gradient = "<<mean<<std::endl;
+	if(tao == -1.0){
+		/* 取平均值作為threshold */
+		Mat m1, m2;
+		reduce(gradient, m1, 0, CV_REDUCE_AVG);
+		reduce(m1, m2, 1, CV_REDUCE_AVG);
+		double mean = m2.at<double>(0);
+		std::cout<<"The mean of gradient = "<<mean<<std::endl;
+		tao = mean;
+	}
+	std::cout<<"set tao = "<<tao<<std::endl;
 	gradient.convertTo(grad_f, CV_32FC1);
-	threshold(grad_f, grad_Clipped, mean, 1.0, THRESH_TOZERO_INV);   //threshold只能接受uint8 or float
+	threshold(grad_f, grad_Clipped, tao, 1.0, THRESH_TOZERO_INV);   //threshold只能接受uint8 or float
 	grad_Clipped.convertTo(clipped_d, CV_64FC1);
 
 	//std::cout<<grad_f.row(0);

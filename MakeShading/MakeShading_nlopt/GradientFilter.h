@@ -6,10 +6,12 @@
 class ObjFunc_data
 {
 public:
-	cv::Mat inputImg;
-	cv::Mat pixelWeight;
+	double inputImg_x;
+	double pixelWeight_x;
+	double clipped_grad_x;
+	cv::Mat patch;
 	double lambda;
-	int count;
+	int itrCount;
 };
 
 class GradientFilter
@@ -23,13 +25,19 @@ private:
 	double static objFunc(const std::vector<double> &x, std::vector<double> &grad, void* objFunc_data);
 	double static constraint(const std::vector<double> &x, std::vector<double> &grad, void* cons_data);
 	cv::Mat static getGradient( cv::Mat src );
-	cv::Mat static gradClipping( cv::Mat gradient );
+	cv::Mat static gradClipping( cv::Mat gradient, double tao=-1.0 );
 	cv::Mat getPixelWeight( cv::Mat img );
 
-	double lambda;
-	double tao;
+	double lambda;       // smooth部分的權重
+	double tao;          // The threshold of the gradient clipping function
+	double stopItrCost;
+	int stopMaxItrCount;
+	double stopPixelVal;
+
+	cv::Size imgSize;
 	cv::Mat m_inputImg;
 	cv::Mat m_pixelWeights;
+	cv::Mat m_clipped_grad;
 	nlopt::opt *opt;
 	ObjFunc_data data;
 };
