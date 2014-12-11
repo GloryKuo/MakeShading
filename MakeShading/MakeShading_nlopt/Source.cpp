@@ -9,8 +9,9 @@
 using namespace cv;
 
 int main( int argc, char** argv ){
-    Mat src = imread( "../input/input2.jpg", 0 );
-    if( !src.data ){ 
+    Mat src = imread( "../input/input7.jpg", 0 );
+    if( !src.data ){
+		std::cout<<"Can not load image!"<<std::endl;
         return -1; 
     }
 	imshow("source", src);

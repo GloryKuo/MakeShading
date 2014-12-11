@@ -5,9 +5,9 @@ GradientFilter::GradientFilter()
 {
 	lambda = 0.1;
 	tao = 0.5;
-	stopItrCost = 2.0;
-	stopMaxItrCount = 10000;
-	stopPixelVal = 1.0;
+	stopItrCost = 0.01;
+	stopMaxItrCount = 10;
+	stopPixelVal = 10.0;
 }
 GradientFilter::~GradientFilter()
 {
@@ -22,7 +22,10 @@ bool GradientFilter::init(cv::Mat img)
 		cvtColor(img, img, CV_RGB2GRAY);
 	}
 	imgSize = Size(img.cols, img.rows);
-	resize(img, img, Size(38,26));
+	if(img.cols>=img.rows)
+		resize(img, img, Size(38,26));
+	else
+		resize(img, img, Size(26,38));
 	img.convertTo(m_inputImg, CV_64FC1, 1/255.0);	  // uint8 to double
 	m_pixelWeights = getPixelWeight(m_inputImg);
 
@@ -85,7 +88,7 @@ Mat GradientFilter::optimize()
 			imshow("Current Image", show);
 			std::cout<<"iteration "<<++(data.itrCount)<<": cost = "<<sumCost<<std::endl;
 			waitKey(10);
-	}while (sumCost>=stopItrCost || data.itrCount >= stopMaxItrCount);
+	}while (sumCost>=stopItrCost && data.itrCount <= stopMaxItrCount);
 
 	Mat residual = abs(m_inputImg - currentImg);
 	resize(residual, residual, imgSize);
