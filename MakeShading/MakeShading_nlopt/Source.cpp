@@ -9,7 +9,7 @@
 using namespace cv;
 
 int main( int argc, char** argv ){
-    Mat src = imread( "../input/input7.jpg", 0 );
+    Mat src = imread( "../input/input20.jpg", 0 );
     if( !src.data ){
 		std::cout<<"Can not load image!"<<std::endl;
         return -1; 
@@ -23,7 +23,7 @@ int main( int argc, char** argv ){
 	Mat shading_8U;
 	shading.convertTo(shading_8U, CV_8UC1, 255);
 	resize(shading_8U, shading_8U, Size(src.cols,src.rows));
-	imwrite("../output/shading.jpg", shading_8U);
+	imwrite("../output/shading_20.jpg", shading_8U);
 
 /////////////////////////////////////////////////////////////////////////////////////
 

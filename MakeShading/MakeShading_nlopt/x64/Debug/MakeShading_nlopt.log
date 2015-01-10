@@ -1,8 +1,8 @@
-﻿已經開始建置於 2014/12/11 下午 08:15:46。
+﻿已經開始建置於 2015/1/9 下午 01:24:10。
      1>節點 2 (Build 目標) 上的專案 "E:\GitHub\makeShading\MakeShading\MakeShading_nlopt\MakeShading_nlopt.vcxproj"。
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /IE:\GitHub\makeShading\MakeShading\/include /IC:\opencv\build\include /Zi /nologo /W3 /WX- /sdl /Od /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Debug\\" /Fd"x64\Debug\vc110.pdb" /Gd /TP /errorReport:prompt GradientFilter.cpp
-         GradientFilter.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /IE:\GitHub\makeShading\MakeShading\/include /IC:\opencv\build\include /Zi /nologo /W3 /WX- /sdl /Od /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Debug\\" /Fd"x64\Debug\vc110.pdb" /Gd /TP /errorReport:prompt Source.cpp
+         Source.cpp
      1>E:\GitHub\makeShading\MakeShading\include\nlopt.hpp(414): warning C4267: '引數' : 將 'size_t' 轉換為 'unsigned int'，資料可能遺失
      1>E:\GitHub\makeShading\MakeShading\include\nlopt.hpp(443): warning C4267: '引數' : 將 'size_t' 轉換為 'unsigned int'，資料可能遺失
      1>E:\GitHub\makeShading\MakeShading\include\nlopt.hpp(473): warning C4267: '引數' : 將 'size_t' 轉換為 'unsigned int'，資料可能遺失
@@ -15,4 +15,4 @@
 
 建置成功。
 
-經過時間 00:00:01.39
+經過時間 00:00:01.34
